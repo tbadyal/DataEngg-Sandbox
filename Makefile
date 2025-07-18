@@ -4,7 +4,7 @@ IMAGE_VERSION ?= latest
 IMAGE_NAME ?= fil-dataengg-sandbox
 
 build:
-	docker buildx build --platform linux/amd64,linux/arm64 -t $(DOCKER_ACCOUNT)/$(IMAGE_NAME):$(IMAGE_VERSION) --push .
+	docker buildx build --platform linux/amd64,linux/arm64 -t $(DOCKER_ACCOUNT)/$(IMAGE_NAME):$(IMAGE_VERSION) .
 
 build-amd64:
 	docker buildx build --platform linux/amd64 -t $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-amd64:$(IMAGE_VERSION) .
