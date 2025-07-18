@@ -1,0 +1,6 @@
+jupyterlab
+pandas
+pyspark
+pyiceberg
+delta-spark
+snowflake-connector-python
