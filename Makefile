@@ -38,3 +38,12 @@ pull-amd64:
 
 pull-arm64:
 	docker pull $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-arm64:$(IMAGE_VERSION)
+
+inspect:
+	docker buildx imagetools inspect $(DOCKER_ACCOUNT)/$(IMAGE_NAME):$(IMAGE_VERSION)
+
+inspect-amd64:
+	docker buildx imagetools inspect $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-amd64:$(IMAGE_VERSION)
+
+inspect-arm64:
+	docker buildx imagetools inspect $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-arm64:$(IMAGE_VERSION)
