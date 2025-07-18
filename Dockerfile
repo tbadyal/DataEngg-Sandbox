@@ -1,5 +1,5 @@
 # ----------- Stage 1: Build ----------------
-FROM --platform=$TARGETPLATFORM python:3.11-slim AS build
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bullseye AS build
 
 # Arguments
 ARG SPARK_VERSION=3.5.1
@@ -9,7 +9,7 @@ ARG TARGETARCH
 
 # Install build tools and openjdk
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl build-essential openjdk-${OPENJDK_VERSION}-jdk-headless && \
+    ca-certificates curl build-essential rsync openjdk-${OPENJDK_VERSION}-jdk-headless && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -22,15 +22,25 @@ RUN curl -fsSL "https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spa
 # Copy Python requirements
 COPY requirements.txt constraints.txt ./
 
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
 # Install Packages
-RUN pip install --prefix=/opt/python --no-cache-dir \
+RUN pip install --prefix=/opt/python --no-cache-dir --no-compile \
     -r requirements.txt -c constraints.txt \
     --index-url=https://pypi.org/simple/ \
     --trusted-host=pypi.org \
     --trusted-host=files.pythonhosted.org
 
+RUN rsync -a \
+    --exclude='*.py[cod]' \
+    --exclude='__pycache__/' \
+    --exclude='test*/' \
+    --exclude='doc*/' \
+    /opt/python/ /opt/pruned-python/
+
 # ----------- Stage 2: Final ----------------
-FROM --platform=$TARGETPLATFORM python:3.11-slim AS final
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bullseye AS final
 
 ARG UID=1000
 ARG GID=1000
@@ -51,7 +61,7 @@ WORKDIR $HOME
 # Copy binaries from build
 COPY --from=build /opt/jvm $JAVA_HOME
 COPY --from=build /opt/spark $SPARK_HOME
-COPY --from=build /opt/python $PYTHON_HOME
+COPY --from=build /opt/pruned-python $PYTHON_HOME
 
 # Set permissions
 RUN chown -R appuser:appuser $HOME
@@ -71,4 +81,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl --fail http://localhost:8888/lab || exit 1
 
 # Entry
-ENTRYPOINT ["jupyter", "lab", "--ip=0.0.0.0", "--no-browser"]
+ENTRYPOINT ["jupyter", "lab", "--ip=0.0.0.0", "--no-browser", "--NotebookApp.token=''", "--ServerApp.allow_origin='*'", "--ServerApp.allow_remote_access=True"]
