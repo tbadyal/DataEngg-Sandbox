@@ -26,7 +26,7 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
 # Install Packages
-RUN pip install --prefix=/opt/python --no-cache-dir --no-compile \
+RUN pip install --prefix=/tmp/python --no-cache-dir --no-compile \
     -r requirements.txt -c constraints.txt \
     --index-url=https://pypi.org/simple/ \
     --trusted-host=pypi.org \
@@ -37,7 +37,7 @@ RUN rsync -a \
     --exclude='__pycache__/' \
     --exclude='test*/' \
     --exclude='doc*/' \
-    /opt/python/ /opt/pruned-python/
+    /tmp/python/ /opt/python/
 
 # ----------- Stage 2: Final ----------------
 FROM --platform=$TARGETPLATFORM python:3.11-slim-bullseye AS final
@@ -61,7 +61,7 @@ WORKDIR $HOME
 # Copy binaries from build
 COPY --from=build /opt/jvm $JAVA_HOME
 COPY --from=build /opt/spark $SPARK_HOME
-COPY --from=build /opt/pruned-python $PYTHON_HOME
+COPY --from=build /opt/python $PYTHON_HOME
 
 # Set permissions
 RUN chown -R appuser:appuser $HOME
