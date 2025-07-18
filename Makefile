@@ -12,9 +12,6 @@ run:
 inspect:
 	docker buildx imagetools inspect $(DOCKER_ACCOUNT)/$(IMAGE_NAME):$(IMAGE_VERSION)
 
-push:
-	docker push $(DOCKER_ACCOUNT)/$(IMAGE_NAME):$(IMAGE_VERSION)
-
 pull:
 	docker pull $(DOCKER_ACCOUNT)/$(IMAGE_NAME):$(IMAGE_VERSION)
 
