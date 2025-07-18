@@ -45,3 +45,11 @@ history-amd64:
 history-arm64:
 	docker history --no-trunc $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-amd64:$(IMAGE_VERSION)
 
+dive:
+	docker dive $(DOCKER_ACCOUNT)/$(IMAGE_NAME):$(IMAGE_VERSION)
+
+dive-amd64:
+	docker dive $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-amd64:$(IMAGE_VERSION)
+
+dive-arm64:
+	docker dive $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-amd64:$(IMAGE_VERSION)
