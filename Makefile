@@ -4,13 +4,13 @@ IMAGE_VERSION ?= latest
 IMAGE_NAME ?= fil-dataengg-sandbox
 
 build:
-	docker buildx build --platform linux/amd64,linux/arm64 -t $(DOCKER_ACCOUNT)/$(IMAGE_NAME):$(IMAGE_VERSION) --load .
+	docker buildx build --platform linux/amd64,linux/arm64 -t $(DOCKER_ACCOUNT)/$(IMAGE_NAME):$(IMAGE_VERSION) --push .
 
 build-amd64:
-	docker buildx build --platform linux/amd64 -t $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-amd64:$(IMAGE_VERSION) --load .
+	docker buildx build --platform linux/amd64 -t $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-amd64:$(IMAGE_VERSION) --push .
 
 build-arm64:
-	docker buildx build --platform linux/arm64 -t $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-arm64:$(IMAGE_VERSION) --load .
+	docker buildx build --platform linux/arm64 -t $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-arm64:$(IMAGE_VERSION) --push .
 
 run:
 	docker run -it --rm -p 8888:8888 -v "$(WORK_DIR):/home/appuser/work" --user appuser $(DOCKER_ACCOUNT)/$(IMAGE_NAME):$(IMAGE_VERSION)
