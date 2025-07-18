@@ -1,6 +1,6 @@
-jupyterlab
-pandas
-pyspark
-pyiceberg
-delta-spark
-snowflake-connector-python
+jupyterlab==4.4.0
+pandas==2.2.0
+pyspark==3.5.1
+pyiceberg==0.9.1
+delta-spark==3.2.0
+snowflake-connector-python==3.16.0
