@@ -30,11 +30,11 @@ push-amd64:
 push-arm64:
 	docker push $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-arm64:$(IMAGE_VERSION)
 
-dive:
-	docker dive $(DOCKER_ACCOUNT)/$(IMAGE_NAME):$(IMAGE_VERSION)
+pull:
+	docker pull $(DOCKER_ACCOUNT)/$(IMAGE_NAME):$(IMAGE_VERSION)
 
-dive-amd64:
-	docker dive $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-amd64:$(IMAGE_VERSION)
+pull-amd64:
+	docker pull $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-amd64:$(IMAGE_VERSION)
 
-dive-arm64:
-	docker dive $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-amd64:$(IMAGE_VERSION)
+pull-arm64:
+	docker pull $(DOCKER_ACCOUNT)/$(IMAGE_NAME)-arm64:$(IMAGE_VERSION)

@@ -16,14 +16,13 @@ ENV HOME=/home/appuser \
 
 # Install only necessary packages and clean up immediately
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl ca-certificates build-essential openjdk-${OPENJDK_VERSION}-jdk-headless && \
+    apt-get install -y --no-install-recommends curl ca-certificates openjdk-${OPENJDK_VERSION}-jdk-headless && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Apache Spark
 RUN curl -fsSL "https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" \
-    | tar xz -C /opt && \
-    apt-get purge --auto-remove -y curl build-essential
+    | tar xz -C /opt
 
 # Create non-root user early for cache efficiency
 RUN groupadd -g ${GID} appuser && \
