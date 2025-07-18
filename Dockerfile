@@ -1,84 +1,56 @@
-# ----------- Stage 1: Build ----------------
-FROM --platform=$TARGETPLATFORM python:3.11-slim-bullseye AS build
+FROM --platform=$TARGETPLATFORM python:3.11-slim-bullseye
 
 # Arguments
 ARG SPARK_VERSION=3.5.1
 ARG HADOOP_VERSION=3
 ARG OPENJDK_VERSION=17
 ARG TARGETARCH
-
-# Install build tools and openjdk
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl build-essential rsync openjdk-${OPENJDK_VERSION}-jdk-headless && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Download Spark
-RUN curl -fsSL "https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" \
-    | tar xz -C /opt && \
-    mv /opt/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION} /opt/spark && \
-    mv /usr/lib/jvm/java-${OPENJDK_VERSION}-openjdk-${TARGETARCH} /opt/jvm
-
-# Copy Python requirements
-COPY requirements.txt constraints.txt ./
-
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-
-# Install Packages
-RUN pip install --prefix=/tmp/python --no-cache-dir --no-compile \
-    -r requirements.txt -c constraints.txt \
-    --index-url=https://pypi.org/simple/ \
-    --trusted-host=pypi.org \
-    --trusted-host=files.pythonhosted.org
-
-RUN rsync -a \
-    --exclude='*.py[cod]' \
-    --exclude='__pycache__/' \
-    --exclude='test*/' \
-    --exclude='doc*/' \
-    /tmp/python/ /opt/python/
-
-# ----------- Stage 2: Final ----------------
-FROM --platform=$TARGETPLATFORM python:3.11-slim-bullseye AS final
-
 ARG UID=1000
 ARG GID=1000
 
 # Environment
-ENV HOME=/home/appuser
-ENV LOCAL_PREFIX=$HOME/.local
-ENV JAVA_HOME=$LOCAL_PREFIX/jvm
-ENV SPARK_HOME=$LOCAL_PREFIX/spark
-ENV PYTHON_HOME=$LOCAL_PREFIX
+ENV HOME=/home/appuser \
+    LOCAL_PREFIX=/home/appuser/.local \
+    JAVA_HOME=/usr/lib/jvm/java-${OPENJDK_VERSION}-openjdk-${TARGETARCH} \
+    SPARK_HOME=/opt/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}
 
-# Create non-root user
+# Install only necessary packages and clean up immediately
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl ca-certificates build-essential openjdk-${OPENJDK_VERSION}-jdk-headless && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install Apache Spark
+RUN curl -fsSL "https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" \
+    | tar xz -C /opt && \
+    apt-get purge --auto-remove -y curl build-essential
+
+# Create non-root user early for cache efficiency
 RUN groupadd -g ${GID} appuser && \
-    useradd -u ${UID} -g ${GID} --create-home appuser
-# Set WorkDir
+    useradd -m -u ${UID} -g ${GID} --create-home appuser && \
+    chown -R appuser:appuser $HOME
+
+# Switch to non-root user
+USER appuser
 WORKDIR $HOME
 
-# Copy binaries from build
-COPY --from=build /opt/jvm $JAVA_HOME
-COPY --from=build /opt/spark $SPARK_HOME
-COPY --from=build /opt/python $PYTHON_HOME
+# Python Environment
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="${LOCAL_PREFIX}/bin:/opt/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}/bin:/usr/lib/jvm/java-${OPENJDK_VERSION}-openjdk-${TARGETARCH}/bin:$PATH"
 
-# Set permissions
-RUN chown -R appuser:appuser $HOME
+# Copy requirements early for layer caching
+COPY --chown=appuser:appuser requirements.txt constraints.txt /tmp/
 
-# Switch to appuser
-USER appuser
+# Install Python packages to --user and clean cache
+RUN pip install --user --no-cache-dir --no-compile \
+    -r /tmp/requirements.txt -c /tmp/constraints.txt && \
+    rm -rf /tmp/* ~/.cache/pip
 
-# Environment Variables
-ENV PATH=$JAVA_HOME/bin:$SPARK_HOME/bin:$PYTHON_HOME/bin:$PATH
-ENV PYTHONPATH=$PYTHON_HOME/lib/python3.11/site-packages
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-
-# Run Jupyter lab
+# Expose port and healthcheck
 EXPOSE 8888
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl --fail http://localhost:8888/lab || exit 1
 
-# Entry
+# Entry point
 ENTRYPOINT ["jupyter", "lab", "--ip=0.0.0.0", "--no-browser", "--NotebookApp.token=''", "--ServerApp.allow_origin='*'", "--ServerApp.allow_remote_access=True"]
