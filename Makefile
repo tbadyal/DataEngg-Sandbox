@@ -1,7 +1,7 @@
 WORK_DIR ?= $(pwd)
 DOCKER_ACCOUNT ?= tbadyal
 IMAGE_VERSION ?= 1.0.0
-IMAGE_NAME ?= fil-dataengg-sandbox
+IMAGE_NAME ?= dataengg-sandbox
 
 build:
 	docker buildx build --platform linux/amd64,linux/arm64 -t $(DOCKER_ACCOUNT)/$(IMAGE_NAME):$(IMAGE_VERSION) -t $(DOCKER_ACCOUNT)/$(IMAGE_NAME):latest --push .
